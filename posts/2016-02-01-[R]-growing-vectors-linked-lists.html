@@ -179,6 +179,8 @@ baselinec &lt;-<span class="st"> </span><span class="kw">cmpfun</span>(baseline)
 <p><a href="https://xkcd.com/1627/">WOOSH.</a></p>
 <p>So just in case you find yourself in the situation where you need to grow a list of objects dynamically: Linking lists might be just good enough for you. And the R Compiler is your friend.</p>
 <p>(Still makes me wonder, why the pre-allocation version is slower than growing in chunks. But then, I’m not a R whiz and there is probably some misconception on how this works from my side.)</p>
+<h2 id="a-note-on-memory-usage">A Note on Memory Usage</h2>
+<p>While the runtime performance of the above linked lists scales pretty linear with the number of elements you stuff into them, there is a drawback when it comes to memory usage: In the worst case (e.g. when you are just collecting integers and thus have the most overhead for creating those lists), you need about 12 times the amount of memory of what the corresponding collapsed list/vector needs. So before you run out of memory you can, (repeatedly) after collecting a lot of values, collapse (<code>unlist</code>) all the values into a flat list/vector and assign that to the <code>$val</code> slot, then go on with a fresh start for the list chain. <code>unlist</code> will play along nicely and merge single values and vectors of values as expected.</p>
 <h2 id="bootnote">Bootnote</h2>
 <p>There’s also always the option to open a temporary file on a ramdisk and appending to that. But honestly, then you are at a point where you might want to externalise the process and only load the results into R. Plus, with 20 million open files you might hit some limit on file handles.</p>
 

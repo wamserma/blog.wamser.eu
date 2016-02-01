@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>blog.wamser.eu - My Hakyll setup</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a href="../">blog.wamser.eu</a>
+            </div>
+            <div id="navigation">
+                <a href="../about.html">About</a>
+                <a href="../archive.html">Archive</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>My Hakyll setup</h1>
+
+            <div class="info">
+    Posted on February  2, 2016
+    
+</div>
+
+<p>Well, I mentioned before that I am using <a href="https://jaspervdj.be/hakyll/">Hakyll</a> to produce this blog. I also mentioned that I <a href="./2016-01-21-GHC-and-ARM.html">like to overcomplicate things</a>.</p>
+<p>So here is the setup I use. I plan to keep this post up to date whenever I change things. (This is probably one of the most common lies in blogging.) This also means that this post will change without expressively noting what has changed. If you want to bookmark some specific version, find the corresponding commit on GitHub.</p>
+<h2 id="setupinstallation">Setup/Installation</h2>
+<p>I will give rather generic installation instructions, condensing what I <a href="https://web.archive.org/web/20150220032638/http://raysohn.com/posts/using-hakyll-and-cabal-sandbox.html">found</a> <a href="http://jdreaver.com/posts/2014-06-22-math-programming-blog-hakyll.html">on the</a> <a href="http://yannesposito.com/Scratch/en/blog/Hakyll-setup/">Interwebs</a>. My personal modifications are covered in the next sections.</p>
+<p>Assuming GHC and cabal are installed, create a new folder for your blog:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">  <span class="kw">mkdir</span> my-awesome-blog <span class="kw">&amp;&amp;</span> <span class="kw">cd</span> <span class="ot">$_</span></code></pre></div>
+<p>Then tell cabal to init the config files there</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">  <span class="kw">cabal</span> init</code></pre></div>
+<p>Cabal will ask you a few questions where you can mostly stick with the suggested selections unless you have special requirements. This will be written to a file <code>my-awesome-blog.cabal</code>, which you need to edit. If you have not changed the main file to <code>site.hs</code> when Cabal asked you, edit now, then also add hakyll to the dependencies. Afterwards the file should contain at least something like</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">main<span class="fu">-</span>is<span class="fu">:</span>       site<span class="fu">.</span>hs
+build<span class="fu">-</span>depends<span class="fu">:</span> base <span class="fu">&gt;=</span><span class="fl">4.6</span> <span class="fu">&amp;&amp;</span> <span class="fu">&lt;</span><span class="fl">4.7</span>, hakyll <span class="fu">&gt;=</span><span class="fl">4.4</span></code></pre></div>
+<p>Now we create a sandbox so everything is contained in our blog-directory. Finally we can tell cabal to load all required libraries and compile them.</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">cabal</span> update
+<span class="kw">cabal</span> sandbox init
+<span class="kw">cabal</span> install --dependencies-only -j2</code></pre></div>
+<p>This will take while. You might want to go for lunch in the meantime. If you have (less than) 2GB of RAM and no or only few swap, you will probably come back to find that the build did not work. In that case do not build parallel (use <code>-j1</code> instead of <code>-j2</code>) and consider increasing swap, using zswap or swapping to zram.</p>
+<p>Assuming everything went well, you can now issue</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">cabal</span> exec hakyll-init .</code></pre></div>
+<p>to create a basic hakyll blog. You need to configure once with</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">cabal</span> configure</code></pre></div>
+<p>and then you can generate everything with</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">cabal</span> build</code></pre></div>
+<p>or have a self-updating local preview withg</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">cabal</span> run watch</code></pre></div>
+<p>Now is a good moment to <a href="https://makandracards.com/markus/32281-tar-zip-gzip-bzip">tar up</a> the blog dir. Backup!</p>
+<h2 id="directory-structure">Directory Structure</h2>
+<p>I diverted a bit from the out-of-the box directory layout, mainly because I want to keep the raw version of posts (and post drafts) in a private Git repository, while you can find everything related to the Hakyll engine <a href="https://github.com/wamserma/hakyll-blog">on GitHub</a>.</p>
+<p>My top level structure is thus:</p>
+<pre><code>blogdir
+   |- engine
+   |- overlay-git
+   |- page
+   +- pub</code></pre>
+<p><code>engine</code> has already been mentioned <code>page</code> holds the markdown files for posts and the static pages like the README.md for GitHub. I have subdirs for posts/static pages/drafts/images <code>pub</code> is (a poor man’s) overlayfs combining the output dir from hakyll (under <code>engine</code>) with <code>overlay-git</code>, which is esentially the .git folder for the published version of the blog. I wrote poor man’s overlayfs, because with <a href="TODO">ALARM on the Chromebook</a> I’m currently stuck with kernel version 3.8.11 and overlayfs was introduced in mainline 3.10. Where was I? Ah, yes, the poor man’s overlayfs. Basically I just <code>mount --bind</code> the two directories into the appropriate places. The caveat is that a <code>cabal run clean</code> or <code>cabal run build</code> removes my .git if it is mounted. Would be safer with a real overlayfs. Mounting/Unmounting and pushing to GitHub is taken care of by a script in the top level dir.</p>
+<p>All the magic happens in <code>engine</code>. This is as setup by Hakyll, but with the subfolders <code>css</code>/<code>images</code>/<code>page</code>/<code>posts</code> symlinked (<code>ln -rs</code>) to the matching folders <code>blogdir/page</code>. The additional subfolder <code>page</code> is needed so I can have different <code>README.md</code> files for the repos and so on.</p>
+<h2 id="site.hs">site.hs</h2>
+<p>I took a lot of inspiration from <a href="http://yannesposito.com/Scratch/en/blog/Hakyll-setup/">Yann Espositos post</a> and <a href="http://jdreaver.com/posts/2014-06-22-math-programming-blog-hakyll.html">JDReaver.com</a>, especially for MathJax integration.</p>
+<p>The latest version of the code is <a href="https://github.com/wamserma/hakyll-blog/blob/master/site.hs">here</a>.</p>
+<p>To make all the magic work, a few more imports than in the default setup are required:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="kw">import           </span><span class="dt">Data.Monoid</span> (mappend)
+<span class="kw">import           </span><span class="dt">Hakyll</span>
+<span class="kw">import qualified</span> <span class="dt">Data.Set</span> <span class="kw">as</span> <span class="dt">S</span>
+<span class="kw">import           </span><span class="dt">Text.Pandoc.Options</span>
+<span class="kw">import           </span><span class="dt">System.Environment</span> (getArgs)
+<span class="kw">import           </span><span class="dt">System.FilePath.Posix</span> (takeFileName,takeDirectory,(&lt;/&gt;),splitFileName)</code></pre></div>
+<p>Next a little trick to include drafts is included:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"> <span class="co">-- ignore posts from the far future</span>
+   (action<span class="fu">:</span>_) <span class="ot">&lt;-</span> getArgs
+   <span class="kw">let</span> postsPattern <span class="fu">=</span> <span class="kw">if</span> action <span class="fu">==</span> <span class="st">&quot;watch&quot;</span>
+                      <span class="kw">then</span> <span class="st">&quot;posts/*&quot;</span>
+                      <span class="kw">else</span> (<span class="fu">.&amp;&amp;.</span>) <span class="st">&quot;posts/*&quot;</span> <span class="fu">$</span> complement <span class="st">&quot;posts/3*&quot;</span></code></pre></div>
+<p>Hakyll uses the convention that the names of the Markdown files begin with <code>year-month-day</code> of the post. I don’t expect to be still blogging with this setup in the next millenium, so years starting with ‘3’ are considered drafts and only rendered when using <code>cabal run watch</code>, but not for <code>cabal run build</code>. The downside is that hakyll complains about the cache, so a <code>cabal run clean</code> is needed every now and then.</p>
+<p>Aside from that I currently have only added support for Math:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">pandocMathCompiler <span class="fu">=</span>
+    <span class="kw">let</span> mathExtensions <span class="fu">=</span> [<span class="dt">Ext_tex_math_dollars</span>, <span class="dt">Ext_tex_math_double_backslash</span>,
+                          <span class="dt">Ext_latex_macros</span>]
+        defaultExtensions <span class="fu">=</span> writerExtensions defaultHakyllWriterOptions
+        newExtensions <span class="fu">=</span> foldr S.insert defaultExtensions mathExtensions
+        writerOptions <span class="fu">=</span> defaultHakyllWriterOptions {
+                          writerExtensions <span class="fu">=</span> newExtensions,
+                          writerHTMLMathMethod <span class="fu">=</span> <span class="dt">MathJax</span> <span class="st">&quot;&quot;</span>
+                        }
+    <span class="kw">in</span> pandocCompilerWith defaultHakyllReaderOptions writerOptions    </code></pre></div>
+<p>And I have a custom route to move static files in place.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">oneUpRoute ::</span> <span class="dt">Routes</span>
+oneUpRoute <span class="fu">=</span> customRoute createOneUpRoute
+  <span class="kw">where</span>
+    createOneUpRoute ident <span class="fu">=</span> takeDirectory p <span class="fu">&lt;/&gt;</span> <span class="st">&quot;..&quot;</span> <span class="fu">&lt;/&gt;</span> takeFileName p
+                             <span class="kw">where</span> p<span class="fu">=</span>toFilePath ident</code></pre></div>
+<h2 id="css">CSS</h2>
+<p>Out-of-the box.</p>
+<h2 id="javascript">JavaScript</h2>
+<p>Only MathJax as described on <a href="http://jdreaver.com/posts/2014-06-22-math-programming-blog-hakyll.html">JDReaver.com</a></p>
+<h2 id="workflowtools">Workflow/Tools</h2>
+<p>I currently use <a href="https://remarkableapp.github.io/">Remarkable</a> to edit the Markdown for my posts.</p>
+<h2 id="github-pages-and-custom-domain">GitHub Pages and Custom Domain</h2>
+<p>I created a new repo on GitHub.com, then <a href="https://help.github.com/articles/creating-project-pages-manually/">followed the instructions for a project page</a> and for <a href="https://help.github.com/articles/setting-up-a-custom-domain-with-github-pages/">setting up a custom domain</a>.</p>
+
+        </div>
+        <div id="footer">
+            <a href="../impressum.html">Impressum</a>
+        </div>
+    </body>
+</html>
