@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>blog.wamser.eu - ZRAM and ZWAP - what and when?</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a href="../">blog.wamser.eu</a>
+            </div>
+            <div id="navigation">
+                <a href="../about.html">About</a>
+                <a href="../archive.html">Archive</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>ZRAM and ZWAP - what and when?</h1>
+
+            <div class="info">
+    Posted on April 10, 2016
+    
+</div>
+
+<p>We’ve all been there: We have a VM or a box with some flavour of linux and we are just out of RAM, the thing starts swapping and everything is in slo-mo.</p>
+<p>Fortunately, Linux also offers some help: <code>zram</code> and <code>zswap</code>.</p>
+<h2 id="which-one-do-i-need">Which one do I need?</h2>
+<p>While both solutions help with low RAM issues, they lend themselves to different scenarios. In short:</p>
+<ul>
+<li>You have a machine with active swap, and it is not a big hassle to reboot it: Use <code>zswap</code>.</li>
+<li>You do not have/want swap and/or cannot reboot the system at the moment: Use <code>zram</code>.</li>
+</ul>
+<h2 id="can-i-use-both">Can I use both?</h2>
+<p>In theory: yes.<br />
+In practice: Unwanted interaction between both approaches may lead to a performance penalty. Decide on one.</p>
+<h3 id="how-do-i-set-those-up">How do I set those up?</h3>
+<h4 id="zswap">ZSWAP</h4>
+<p>Let’s start off with <code>zswap</code>. A pretty common use case is when you have a VM with e.g. Ubuntu in it. And then at some point you need just a bit more RAM to avoid swapping. At the same time you cannot (do not want) to provision more Memory to the VM. <code>zswap</code> compresses memory pages when memory gets low and only moves compressed pages to swap.</p>
+<p>Set up is pretty easy (examples are for Ubuntu):</p>
+<ol start="0" style="list-style-type: decimal">
+<li><p>Install the <code>zswap</code>-Package if needed:</p>
+<p><code>sudo apt-get install zswap</code></p></li>
+<li><p>Edit the config of your bootloader (e.g. <code>/etc/default/grub</code>) as root and extend the Kernel command line to sth. like</p>
+<p><code>GRUB_CMDLINE_LINUX = &quot;zswap.enabled=1&quot;</code></p>
+<p>You can set the compression algorithm by adding sth. like <code>zswap.compressor=lz4</code>. In case you want to test <code>zswap</code> first, you can also interrupt the boot process and add the above option to the kernel command line directly. This will enable <code>zswap</code> only until the system is rebooted.</p></li>
+<li><p>Activate the modifications with (if you edited your <code>grub</code>-file)</p>
+<p><code>sudo update-grub</code></p></li>
+</ol>
+<h4 id="zram">ZRAM</h4>
+<p>Now for the other use-case: Say you do not want to have swap, because it would induce to much wear on the eMMC/SD/SSD of your system. So what can you do? Well, you could set up a Virtual Machine with Windows95, install MagnaRAM or SoftRAM in it, create a RAMDisk in the VM and export this as swap-space to your host. <code>zram</code> is basically a shortcut without the Windows-VM and actually working compression. You tell it how much RAM it may use (this is just an upper bound, actual usage will be less) and <code>zram</code> creates a transparently compressed block device in memory that can be used as a swap partition (or a tmpfs). The nice thing is: you can set this up without rebooting.</p>
+<p>On Ubuntu just do a</p>
+<pre><code>sudo apt-get install zram-swap</code></pre>
+<p>and you are done.</p>
+<p>I had to use this on ArchLinuxARM to be able to <a href="2016-02-02-hakyll-blog-setup.html">compile Hakyll</a>. For convenience, here is a small script that you can save as <code>zramify.sh</code> and run with sudo, assuming you have installed the <code>zram</code>-package of your distro.</p>
+<pre><code>modprobe zram                                 # load kernel module
+# echo lz4 &gt; /sys/block/zram0/comp_algorithm  # set compression algo
+echo 1G &gt; /sys/block/zram0/disksize           # set size of zram-disk
+mkswap --label zram0 /dev/zram0               # create swap
+swapon --priority 100 /dev/zram0              # activate swap</code></pre>
+<p>Setting the compression algorithm is usually not needed and depends on your individual hardware/distro-setup. If you set up your swap manually this way, it will be gone after a reboot.</p>
+<h3 id="is-there-more">Is there more?</h3>
+<p>Both packages have extensive documentation. Head to the <code>man</code>-pages for more options etc.</p>
+
+        </div>
+        <div id="footer">
+            <a href="../impressum.html">Impressum</a>
+        </div>
+    </body>
+</html>
