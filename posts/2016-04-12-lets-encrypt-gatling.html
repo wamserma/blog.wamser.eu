@@ -94,6 +94,20 @@ gatling -p 80 -t</code></pre>
 <p>That’s it. Enjoy your server.</p>
 <h2 id="last-words">Last Words</h2>
 <p>Let’s Encrypt is currently adding support for EC-based certificates. I will update this post in due time, also with details on renewing the certificate.</p>
+<h2 id="update-2016-04-15">Update 2016-04-15</h2>
+<p>The current release (0.13) of <code>tlsgatling</code> has an issue with SSL that prevents recent versions of Firefox and Chrome from getting a useful connection. (The first visit to the site works, but subsequent ones time out.) IE and (older) Android Browsers work as expected. This is fixed in <code>gatling</code> 0.14, which is not yet released due to build issues with <code>mbedTLS</code>. Compiling <code>tlsgatling</code> is pretty easy (indtruction for Debian Jessie, easy to adopt for other distros):</p>
+<ol style="list-style-type: decimal">
+<li>Install dependencies: <code>sudo apt-get install cvs libssl-dev</code></li>
+<li>(optional) create a working dir</li>
+<li>get the source for <code>libowfat</code>:<br />
+ <code>cvs -d :pserver:cvs@cvs.fefe.de:/cvs -z9 co libowfat</code></li>
+<li>get the source for <code>gatling</code>:<br />
+ <code>cvs -d :pserver:cvs@cvs.fefe.de:/cvs -z9 co gatling</code></li>
+<li>edit <code>gatling/GNUMake</code> and remove <code>ptlsgatling</code> from the <code>TARGETS</code></li>
+<li>compile <code>libowfat</code>: <code>cd libowfat &amp;&amp; make &amp;&amp; cd ..</code></li>
+<li>compile <code>gatling</code>: <code>cd gatling &amp;&amp; make</code></li>
+</ol>
+<p>And you get the binaries. My personal preference is to install as much as possible using the package manager of my distro, but I’m also too lazy to create my own <code>.deb</code> here. So I just copied <code>tlsgatling</code> over to <code>/usr/bin</code> and replaced the old binary there.</p>
 
         </div>
         <div id="footer">
