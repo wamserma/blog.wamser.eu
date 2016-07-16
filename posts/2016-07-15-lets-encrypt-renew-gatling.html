@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>blog.wamser.eu - Let's Renew Gatling</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a href="../">blog.wamser.eu</a>
+            </div>
+            <div id="navigation">
+                <a href="../about.html">About</a>
+                <a href="../archive.html">Archive</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>Let's Renew Gatling</h1>
+
+            <div class="info">
+    Posted on July 15, 2016
+    
+</div>
+
+<h2 id="the-foreword">The foreword</h2>
+<p>Around 90 days have passed since <a href="2016-04-12-lets-encrypt-gatling.html">I wrote about setting up Gatling with Let’s Encrypt Certificates</a>. So it was time to renew the certificates.</p>
+<p>This would have meant having another plate of copypasta with <a href="https://gethttpsforfree.com/">gethttpsforfree.com</a>, which, while possible, didn’t get me too excited for a regular thing. I wanted something simple that I could possibly include in a script. By now there are a few options for automating the process aside from the official client, from bash-only-scripts to Go-scripts. I settled with <a href="https://github.com/diafygi/acme-tiny/">acme-tiny</a>, as python is available on my server anyway and the script is small enough so I could have a glance on it to check for any obvious malicious behaviour (like uploading my privates to some shady web server). For reference, I use <a href="https://raw.githubusercontent.com/diafygi/acme-tiny/fcb7cd6f66e951eeae76ff2f48d8ad3e40da37ef/acme_tiny.py">this version</a> which has a sha256sum of <code>ab934479180dd4ebc95b36704d2f4118c0957f8b83b24af133be3e965c21e7af</code>.</p>
+<p>Let’s Encrypt now also supports Elliptic-Curve-Keys, but I postpone the switch from EC to RSA for a later post.</p>
+<p>Back to the grunt work. Everything that is below could be stuffed into a cron job, but as I have to open/close port 80 on my router manually, I also update manually.</p>
+<h2 id="the-code">The code</h2>
+<h3 id="serving">Serving</h3>
+<p>Create the folders for the webroot challenge (if you keep those afterwards, you need to do this only once):</p>
+<pre><code>mkdir -p /var/www/default/.well-known/acme-challenge/
+chmod o+r /var/www/default/.well-known
+chmod o+r /var/www/default/.well-known/acme-challenge
+ln -s /var/www/default/.well-known /var/www/default/\:well-known</code></pre>
+<p>Launch a screen session or a second terminal and start gatling (only needed if you do not have a gatling instance running at port 80):</p>
+<pre><code>cd /var/www/default/
+gatling</code></pre>
+<h3 id="requesting">Requesting</h3>
+<p>In the folder where your keys live, create a new Certificate Signing Request (CSR):</p>
+<pre><code>openssl req -new -sha256 -key domain.key -subj &quot;/&quot; \
+-reqexts SAN -config &lt;(cat /etc/ssl/openssl.cnf \
+&lt;(printf &quot;[SAN]\nsubjectAltName=DNS:rainbowpony.wamser.eu&quot;)) &gt; domain.csr</code></pre>
+<p>back to you first terminal get acme-tiny and put it to work</p>
+<pre><code>wget https://raw.githubusercontent.com/diafygi/acme-tiny/fcb7cd6f66e951eeae76ff2f48d8ad3e40da37ef/acme_tiny.py
+python ./acme_tiny.py --account-key ./account.key --csr ./domain.csr --acme-dir /var/www/default/.well-known/acme-challenge/ &gt; ./signed.crt</code></pre>
+<p>Now you have your fresh certificate. Combine it with your key and the intermediate certificate and put it in place for your Webserver (depending on your setup).</p>
+<pre><code>wget -O - https://letsencrypt.org/certs/lets-encrypt-x1-cross-signed.pem &gt; intermediate.pem
+cat domain.key signed.crt intermediate.pem &gt; server.pem</code></pre>
+<p>All of this takes just a minute over ssh. So, Let’s Renew!</p>
+<h2 id="the-final-word">The final word</h2>
+<p>Of course cou can use <code>acme-tiny</code> also for your inital certificate, <a href="https://www.metachris.com/2015/12/comparison-of-10-acme-lets-encrypt-clients/#client-acme-tiny">as other people have documented</a>.</p>
+
+        </div>
+        <div id="footer">
+            <a href="../impressum.html">Impressum</a>
+        </div>
+    </body>
+</html>

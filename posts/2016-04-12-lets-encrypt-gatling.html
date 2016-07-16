@@ -26,6 +26,7 @@
     
 </div>
 
+<p><strong><em>Update 2016-07-15:</em></strong> If you prefer just running a script or look for a more comfortable way to renew, <a href="2016-07-15-lets-encrypt-renew-gatling.html">I have a post for you here</a>.</p>
 <p>I’m in the process of moving my personal data from cloudy venues to my own server, where I want to access it over https. For that purpose I want a <a href="https://letsencrypt.org/">Let’s Encrypt</a>-certificate, but not the client with all its dependencies on my server, especially as I’m going to set up <a href="https://www.fefe.de/gatling/">gatling</a>, which is not supported by the official tools.</p>
 <p>Fortunately, there is <a href="https://gethttpsforfree.com/">gethttpsforfree.com</a> which walks you through the process. Be sure to also read <a href="https://github.com/diafygi/gethttpsforfree">github.com/diafygi/gethttpsforfree</a> to understand what is going on.</p>
 <p>For convenience (and my own future reference), I will explain each step a bit further here. Note that all is done on the target server (a Debian Jessie in my case) to avoid issues arising from a different SSL configuration on the client (ArchLinuxARM).</p>
@@ -41,7 +42,7 @@
    export PRIV_KEY=$(pwd)/account.key
    openssl rsa -in account.key -pubout</code></pre>
 <p>(the variable <code>PRIV_KEY</code> will come in handy in step 3)</p>
-<p>Put your eMail-Address and the output of the last <code>openssl</code>-command in the appropriate boxes under Step 1 on <a href="https://gethttpsforfree.com/">gethttpsforfree.com</a>. This will submit you <strong><em>public</em></strong> key and your eMail-Address to Let’s Encrypt.</p>
+<p>Put your eMail-Address and the output of the last <code>openssl</code>-command in the appropriate boxes under Step 1 on <a href="https://gethttpsforfree.com/">gethttpsforfree.com</a>. This will submit your <strong><em>public</em></strong> key and your eMail-Address to Let’s Encrypt.</p>
 <p>(In theory, a man-in-the-middle could be attempted by that page by swapping in its public key at this point. But that would be discovered later unless it can also impersonate your server to Let’s Encrypt.)</p>
 <p>Backup your <code>account.key</code> file to a safe and secure place, then click on <code>Validate Account Info</code>.</p>
 <h2 id="step-2">Step 2:</h2>
@@ -49,7 +50,7 @@
 <p>Make a list of all the domain names that this certificate will cover. These names are likely different from your local machine name. You probably <code>ssh</code>’d into your home server with <code>ssh root@bloodybox</code>, but you set it up to be accessible as <code>http(s)://rainbowpony.wamser.eu</code>. Then <code>rainbowpony.wamser.eu</code> is the name you want to put on your list.<br />
 Ready? Good.</p>
 <h3 id="generate-the-key-for-your-sites">1. Generate the key for your site(s):</h3>
-<p><code>openssl genrsa -out account.key 4096</code></p>
+<p><code>openssl genrsa -out domain.key 4096</code></p>
 <p>This time we did not ask to encrypt the output, as your server needs to see the key in plain later.</p>
 <p>You could use this key already for your page (for testing the setup and so on), but it will give you a warning in your browser. So we will ask Let’s Encrypt to sign this certificate. The formal way of asking is creating a Certificate Signing Request or CSR as we pros call it.</p>
 <h3 id="generate-csr">2. Generate CSR</h3>
