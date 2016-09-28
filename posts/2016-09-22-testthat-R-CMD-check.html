@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>blog.wamser.eu - Passing test with testthat that aren't.</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a href="../">blog.wamser.eu</a>
+            </div>
+            <div id="navigation">
+                <a href="../about.html">About</a>
+                <a href="../archive.html">Archive</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>Passing test with testthat that aren't.</h1>
+
+            <div class="info">
+    Posted on September 22, 2016
+    
+</div>
+
+<p>Recently I got bitten by a nasty bug. The code of my R package worked, I had nearly 100% test percent coverage. When I ran the tests manually in R Studio everything was fine. And then I did an <code>R CMD check</code>. And things fell apart.</p>
+<p><a href="http://r-pkgs.had.co.nz/check.html">Hadley writes</a>:</p>
+<blockquote>
+<p>Occasionally you may have a problem where the tests pass when run interactively with devtools::test(), but fail when in R CMD check. This usually indicates that you’ve made a faulty assumption about the testing environment, and it’s often hard to figure it out.</p>
+</blockquote>
+<p>Duh. There weren’t any assumptions from my side. At least none I was aware of. So I started investigating. The failed tests showed me that somehow the call to <code>strcspn()</code> behaved strangely, using wrong characters as delimiters to search for. But the same tests still ran fine when called manually.</p>
+<p>To cut the long story short: I had forgotten to put a NULL-termitator to the array of delimiter characters. It seems that when running the tests manually, memory was freshly allocated in the background (or at least zeroed), while during <code>R CMD check</code> the memory was already cluttered with stuff from before.</p>
+<p>So why do I mention all that? Not because of the bug. This was a very common (and embarassing) one. But for the fact, that the way you call your test suite may shadow your bugs. So whenever your testthat tests behave differently when called manually and called by <code>R CMD check</code> this might be a clue where to start checking.</p>
+
+        </div>
+        <div id="footer">
+            <a href="../impressum.html">Impressum</a>
+        </div>
+    </body>
+</html>
